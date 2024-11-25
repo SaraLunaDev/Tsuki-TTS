@@ -1,0 +1,14 @@
+2=Alba=google_es-ES-Wavenet-C
+10=Martin=z3kTTwYbQrmL7ckdGcJi,google_es-ES-Wavenet-E
+1=Aerista=vGQNBgLaiM3EdZtxIiuY,google_es-ES-Wavenet-F
+3=Arthur=GwQsYoLaU4KsHJmDf7FN,wnJmLqfUgsJFn5s6u9vy,google_es-ES-Wavenet-E
+8=Javier=google_es-ES-Wavenet-B
+4=Camille=google_fr-FR-Wavenet-A
+7=Hana=google_ja-JP-Wavenet-A
+9=Lucia=google_es-ES-Wavenet-D
+5=Felipez=google_es-ES-Wavenet-E
+6=Gerta=google_es-ES-Wavenet-F
+11=Tortugo=WOY6pnQ1WCg0mrOZ54lM
+12=Vilexis=e7unY9rAHKSEek9xmCwJ,ErD8WaSwbsLQxkgX8IMy,google_es-ES-Wavenet-E
+13=Knekro=Daw0RcfjANE7crDLtK8Z,qoeFuUI9E4ho40ayxuqe,google_es-ES-Wavenet-E
+14=Sara=wRn6UT93Jl9VqFqsGswz,Q7dljoApJverMCMA5fz3,google_es-ES-Wavenet-F
