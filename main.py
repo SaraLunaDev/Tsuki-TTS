@@ -4,6 +4,7 @@ import pygame
 import re
 import traceback
 import base64
+import time
 from datetime import datetime
 
 # Ruta base del script
@@ -25,10 +26,15 @@ endpoint_file_path = os.path.join(config_dir, "endpoint.txt")
 text_file_path = os.path.join(config_dir, "msg.txt")
 volume_file_path = os.path.join(config_dir, "volume.txt")
 error_log_path = os.path.join(config_dir, "errores.txt")
+active_path = os.path.join(config_dir, "active.txt")
 
 # Inicializa el archivo de errores limpio
 with open(error_log_path, "w", encoding="utf-8") as error_file:
     error_file.write("")
+
+# Inicializa el archivo de errores limpio
+with open(active_path, "w", encoding="utf-8") as active_file:
+    active_file.write("null")
 
 def clean_old_logs(logs_dir, max_logs=10):
     """Mantener solo los más recientes max_logs archivos en la carpeta logs."""
@@ -129,8 +135,12 @@ try:
         """
         Procesa el mensaje para añadir:
         - Una voz predeterminada al inicio si no existe.
-        - Una voz después de cada sonido si no hay texto que ya tenga una voz explícita.
+        - Una voz después de cada sonido SOLO si no hay texto que ya tenga una voz explícita.
+        - Elimina espacios innecesarios después de códigos de audio.
         """
+        # Eliminar espacios después de códigos de audio (números entre paréntesis)
+        texto = re.sub(r'\((\d+)\)\s+', r'(\1)', texto)
+        
         # Añadir voz predeterminada al inicio si no existe
         if not re.match(r"^\(\d+:\)", texto):
             texto = f"{voz_predeterminada} {texto}"
@@ -140,16 +150,28 @@ try:
         procesado = ""
         ultima_voz = voz_predeterminada
 
-        for segment in segments:
+        for i, segment in enumerate(segments):
             if segment[0]:  # Identificador de voz
                 ultima_voz = segment[0]
                 procesado += ultima_voz
             elif segment[1]:  # Sonido
                 procesado += segment[1]
-                if ultima_voz:  # Añadir la última voz después del sonido
-                    procesado += ultima_voz
+                # Solo añadir la última voz después del sonido si el siguiente segmento no es una voz
+                # y hay texto que seguir procesando
+                if i + 1 < len(segments):
+                    siguiente_segmento = segments[i + 1]
+                    # Si el siguiente segmento no es una voz y hay texto, añadir la última voz
+                    if not siguiente_segmento[0] and siguiente_segmento[2] and siguiente_segmento[2].strip():
+                        procesado += ultima_voz
             elif segment[2]:  # Texto simple
-                procesado += segment[2]
+                # Limpiar espacios al inicio y final del texto
+                texto_limpio = segment[2].strip()
+                if texto_limpio:  # Solo añadir si hay texto después de limpiar
+                    # Si el texto procesado termina en ), añadir texto sin espacio inicial
+                    if procesado.endswith(')'):
+                        procesado += texto_limpio
+                    else:
+                        procesado += " " + texto_limpio
 
         return procesado
 
@@ -167,7 +189,7 @@ try:
     else:
         raise FileNotFoundError(f"No se encontró '{text_file_path}'.")
         
-    segments = re.findall(r"\((\d+):\)([^(\n]+)|\(([^:()\n]+):\)([^(\n]+)|\((\d+)\)|\(([^:()\n]+)\)", texto_procesado)
+    segments = re.findall(r"\((\d+):\)\s*([^(\n]+?)(?=\(|$)|\(([^:()\n]+):\)\s*([^(\n]+?)(?=\(|$)|\((\d+)\)|\(([^:()\n]+)\)", texto_procesado)
 
     def buscar_voz(voice_identifier):
         return voices_by_id.get(voice_identifier) or voices_by_name.get(voice_identifier)
@@ -175,10 +197,34 @@ try:
     def buscar_sonido(sound_identifier):
         return sounds.get(sound_identifier, {}).get("file")
 
+    def limpiar_texto_para_tts(texto):
+        """
+        Limpia el texto antes de enviarlo a la API de TTS:
+        - Elimina espacios múltiples consecutivos
+        - Elimina espacios al inicio y final
+        - Evita enviar texto vacío o solo espacios
+        """
+        if not texto:
+            return ""
+        
+        # Eliminar espacios múltiples y al inicio/final
+        texto_limpio = re.sub(r'\s+', ' ', texto.strip())
+        
+        # Retornar texto limpio o vacío si solo contiene espacios
+        return texto_limpio if texto_limpio and not texto_limpio.isspace() else ""
+
     def generar_audio_mixto(api_keys, voice_identifiers, text, file_name, google_api_key):
         """
         Intenta generar audio usando múltiples identificadores, mezclando ElevenLabs y Google.
         """
+        # Limpiar el texto antes de enviarlo a la API
+        texto_limpio = limpiar_texto_para_tts(text)
+        
+        # Si el texto está vacío después de la limpieza, no generar audio
+        if not texto_limpio:
+            log_message(f"Texto vacío después de limpieza, saltando generación de audio para: '{text}'")
+            return False
+            
         elevenlabs_identifiers = [vid for vid in voice_identifiers if not vid.startswith("google_")]
         google_identifiers = [vid for vid in voice_identifiers if vid.startswith("google_")]
 
@@ -186,7 +232,7 @@ try:
         for voice_id in elevenlabs_identifiers:
             for i, api_key in enumerate(api_keys):
                 headers = {"xi-api-key": api_key, "Content-Type": "application/json"}
-                payload = {"text": text.strip(), "model_id": "eleven_multilingual_v2", "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "style": 0.1, "use_speaker_boost": True}}
+                payload = {"text": texto_limpio, "model_id": "eleven_multilingual_v2", "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "style": 0.45, "use_speaker_boost": True}}
                 url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
                 response = requests.post(url, json=payload, headers=headers)
                 if response.status_code == 200:
@@ -206,7 +252,7 @@ try:
             url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={google_api_key}"
             headers = {"Content-Type": "application/json"}
             payload = {
-                "input": {"text": text.strip()},
+                "input": {"text": texto_limpio},
                 "voice": {"languageCode": "es-ES", "name": google_voice_name},
                 "audioConfig": {"audioEncoding": "MP3"}
             }
@@ -261,6 +307,9 @@ try:
                 if generar_audio_mixto(api_keys, voice_identifiers, text, file_name, "AIzaSyBwtrjL4pxiNAxqP0ebe8wd4f1pXr6Sido"):
                     audio_files.append(file_name)
 
+    with open(active_path, "w", encoding="utf-8") as active_file:
+        active_file.write("true")
+    time.sleep(1)
     # Reproducción de audios
     pygame.mixer.init()
     for file in audio_files:
@@ -272,6 +321,8 @@ try:
             pygame.time.Clock().tick(10)
 
     log_message("Ejecución completada exitosamente.")
+    with open(active_path, "w", encoding="utf-8") as active_file:
+        active_file.write("false")
 
 except Exception as e:
     error_message = traceback.format_exc()

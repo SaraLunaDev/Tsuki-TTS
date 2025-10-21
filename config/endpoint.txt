@@ -12,3 +12,5 @@
 12=Vilexis=e7unY9rAHKSEek9xmCwJ,ErD8WaSwbsLQxkgX8IMy,google_es-ES-Wavenet-E
 13=Knekro=Daw0RcfjANE7crDLtK8Z,qoeFuUI9E4ho40ayxuqe,google_es-ES-Wavenet-E
 14=Sara=wRn6UT93Jl9VqFqsGswz,Q7dljoApJverMCMA5fz3,google_es-ES-Wavenet-F
+15=Jelo=BNVkmQFSmUskUeb6TjFx,Zyz6lRdnxNIHj7SDRBDT,google_es-ES-Wavenet-E
+16=Loquendo=bnd5rtDtc7TKExxx5fp0,uoILWoHVdmVRdAGsFFyR,google_es-ES-Wavenet-E
