@@ -4,8 +4,8 @@ config/apisgoogle.txt
 config/endpoint.txt
 
 # Archivos de configuración personal
-config/msg.txt
-config/active.txt
+# config/msg.txt     # Permitido - mensajes de prueba
+# config/active.txt  # Permitido - estado de activación
 config/errores.txt
 config/volume.txt
 config/fx_volume.txt
