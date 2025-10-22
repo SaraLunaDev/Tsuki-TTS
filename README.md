@@ -37,8 +37,6 @@ tu_api_key_aqui
 
 ## Uso
 
-https://tsuki-hub.vercel.app/TTS
-
 ```bash
 python main.py
 ```
@@ -46,6 +44,9 @@ python main.py
 **Formato de mensajes:**
 - `(2:)texto` - Usar voz ID 2
 - `(4)` - Reproducir sonido 4
+
+**Web** - Recomiendo ojearla
+https://tsuki-hub.vercel.app/TTS
 
 ## Requisitos
 
