@@ -19,6 +19,9 @@ temp/
 logs/
 *.log
 
+# Interfaz de configuración (privada)
+config.py
+
 # Archivos de Python
 __pycache__/
 *.py[cod]
